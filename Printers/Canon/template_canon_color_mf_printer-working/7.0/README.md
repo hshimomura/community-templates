@@ -19,8 +19,8 @@ template has not been tested on an MF750C or other Canon model.
    discovery rules, triggers, graphs, and value maps. Review the import diff
    before deleting missing objects: older installations may have useful item
    history associated with the removed fixed checks.
-3. Run toner, paper input, and Canon counter discovery. Check the values and
-   unsupported item count before enabling notifications.
+3. Run toner, waste toner container, paper input, and Canon counter discovery.
+   Check the values and unsupported item count before enabling notifications.
 
 ## Data collected
 
@@ -32,6 +32,7 @@ template has not been tested on an MF750C or other Canon model.
 | Device, cover, and console status | Host Resources and Printer MIBs | Cover status follows RFC 3805: `3`/`5` open, `4`/`6` closed. |
 | Marker life count and counter unit | Printer MIB | The MF660C reports unit `7` (impressions). Marker life count is distinct from Canon's copy-and-print total. |
 | CMYK toner names, raw levels, capacities, percentages | Printer MIB discovery | Percentage is `100 × level / capacity` when capacity is positive. |
+| Waste toner container capacity and free space | Printer MIB discovery | Created only for rows with `prtMarkerSuppliesClass=4` (receptacle) and `prtMarkerSuppliesType=4` (waste toner). The row index is discovered, not fixed. |
 | Paper input names, raw levels, capacities, status | Printer MIB discovery | No paper-out trigger is defined because status is a bit field and the level may be a sentinel value. |
 | Canon page counters | Canon private MIB discovery | The printer supplies each counter name and index; unavailable counters create no item. |
 
@@ -52,20 +53,27 @@ The former fixed `Device.IP.address` used one contributor's IP address. The
 also works when the host's SNMP interface is configured with a DNS name.
 The fixed maintenance-cartridge items used standard Printer MIB capacity and
 level OIDs with supply index 5, which MF660C does not expose. Canon's MF660C
-consumables list names only toner cartridges. The
+consumables list names only toner cartridges. Other MF models, including
+imageCLASS X MF1538C II, have a separate waste toner container. The new
+discovery reads the Printer MIB class, type, name, and unit at each supply
+index. Only waste toner receptacles create capacity and free-space items;
+`prtMarkerSuppliesLevel` means remaining space for a receptacle. Negative
+values indicate an unspecified or unknown capacity/level rather than a
+measured amount. This discovery has been checked for zero matches on MF660C;
+it has not been tested against an MF model with a waste toner container. The
 previous private counter OIDs used a branch that MF660C does not implement.
 The former `Tray1.paper.out` checked `prtInputStatus=1`; RFC 3805 defines this
 as *unavailable on request*, not an empty tray. The 7.0 template uses discovery
-for IPv4 addresses, toner, paper inputs, and counters.
-It does not create a maintenance-cartridge item.
-MF660C exposes only four toner rows in `prtMarkerSuppliesTable`; other models
-may expose additional supplies and require their own verified discovery rules.
+for IPv4 addresses, toner, waste toner containers, paper inputs, and counters.
+MF660C exposes only four toner rows in `prtMarkerSuppliesTable`, so waste toner
+container discovery creates no items on that model.
 
 ## References
 
 - [Printer MIB v2 (RFC 3805)](https://www.rfc-editor.org/rfc/rfc3805)
 - [Canon MF660C counter guide](https://oip.manual.canon/USRMA-9960-zz-SSM-660-enUS/contents/devu-mng_set-status-counter.html)
 - [Canon MF660C consumables list](https://oip.manual.canon/USRMB-0001-zz-SSM-660-enLN/contents/devu-mainte-consumables_rep-list.html)
+- [Canon imageCLASS X MF1538C II replacement parts](https://oip.manual.canon/USRMA-8451-zz-SSMX-1500II-enUS/contents/devu-mainte-repl_parts.html)
 - [Canon MF750C counter guide](https://oip.manual.canon/USRMA-7184-zz-SSM-750-enUV/contents/devu-mng_set-status-counter.html)
 
 ## Authors
